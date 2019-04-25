@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+
+
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<title>Dots and Boxes</title>
+	<style>
+	.result{
+		position: absolute;
+		right: 0px;
+		width: 150px;
+		border: 3px solid #FF0000;
+		padding: 10px;
+		text-align: center;
+	}
+	.inputstyle{
+		margin: 10px;
+	}
+	</style>
+</head>
+
+
+
+<body>
+	<label for="gamewidth" class ="inputstyle">width of the table :</label>
+	<input type="number" id="gamewidth" class ="inputstyle"><br>
+	<label for="gameheight" class ="inputstyle">height of the table :</label>
+	<input type="number" id="gameheight" class ="inputstyle"><br>
+	<button onclick="startFunction()" class ="inputstyle">GO !</button>
+	<div class ="result" id="demo">result will be here!</div>
+<script>
+		const HEIGHT = 600;
+		const WIDTH = 600;
+		const STROKE = 5;
+		var square_counts = [0,0];
+		
+		//when users clicks the button this function starts
+		function startFunction(){
+		//getting the variables from users
+		var dotsinWIDTH = document.getElementById("gamewidth").value;
+		var dotsinHEIGHT = document.getElementById("gameheight").value;
+		//removing inputs to make the canvas 
+		$("label").remove();
+		$("button").remove();
+		$("input").remove();
+		var canv = document.createElement("CANVAS");
+		canv.height = HEIGHT;
+		canv.width = WIDTH;
+		document.body.appendChild(canv);
+		var canvRect = canv.getBoundingClientRect();
+		var contx = canv.getContext("2d");
+
+		//creating the board
+		dotsinHEIGHT++;
+		dotsinWIDTH++;
+		var CELLWIDTH = WIDTH / dotsinWIDTH;
+		var CELLHEIGHT = HEIGHT / dotsinHEIGHT;
+		//dots radius
+		const DOT = STROKE;
+		dotsinHEIGHT--;
+		dotsinWIDTH--;
+
+		contx.fillStyle = "white";
+		contx.strokeStyle = "red";
+		contx.fillRect(0,0,WIDTH,HEIGHT);
+		contx.strokeRect(STROKE/2,STROKE/2,WIDTH - STROKE,HEIGHT - STROKE);
+
+		//creating the grid with dots
+
+		for(let i = 0;i < dotsinHEIGHT;i++){
+			for (let j = 0;j < dotsinWIDTH;j++){
+				contx.fillStyle = "black";
+				contx.beginPath();
+				contx.arc(CELLWIDTH * (j + 1),CELLHEIGHT * (i + 1),DOT,0,Math.PI * 2);
+				contx.fill();
+			}
+		}
+			
+		//create the squares
+		var squares = [];
+		for(let i = 0;i < (dotsinHEIGHT - 1);i++){
+			squares[i] = [];
+			for (let j = 0;j < (dotsinWIDTH - 1);j++){
+				squares[i][j] = new square(CELLWIDTH * (j + 1),CELLHEIGHT * (i + 1),CELLWIDTH,CELLHEIGHT);
+			}
+		}
+		var turn = [0];
+		canv.addEventListener("mousemove", function(){highlightGrid(squares ,dotsinHEIGHT ,dotsinWIDTH,contx,canvRect,turn);});
+		canv.addEventListener("click", function(){click(squares ,dotsinHEIGHT ,dotsinWIDTH,contx,canvRect,turn);});
+	}
+	//draw line from (x0 ,y0) to (x1 , y1) in contx
+	function drawLine(x0, y0, x1, y1, color,contx) {
+            contx.strokeStyle = color;
+            contx.beginPath();
+            contx.moveTo(x0, y0);
+            contx.lineTo(x1, y1);
+            contx.stroke();
+    }
+	
+	//checking the winners and also adding to the number of squares filled by teams
+	function check_squares(color,square_counts,dotsinWIDTH,dotsinHEIGHT){
+		if(color == "blue"){square_counts[0] += 1;}
+		else{square_counts[1] += 1;}
+		var cells = (dotsinHEIGHT - 1) * (dotsinWIDTH - 1);
+		if (square_counts[0] + square_counts[1] == cells){
+			if(square_counts[0] > square_counts[1]){
+				document.getElementById("demo").innerHTML = "blue team wins!";
+			}
+			if(square_counts[0] < square_counts[1]){
+				document.getElementById("demo").innerHTML = "red team wins!";
+			}
+			if(square_counts[0] == square_counts[1]){
+				document.getElementById("demo").innerHTML = "its a draw!";
+			}
+		}
+	}
+
+    //function for filling squares
+	function square_Fill(i,j,color,contx,dotsinWIDTH,dotsinHEIGHT){
+		dotsinHEIGHT++;
+		dotsinWIDTH++;
+		var CELLWIDTH = WIDTH / dotsinWIDTH;
+		var CELLHEIGHT = HEIGHT / dotsinHEIGHT;
+		dotsinHEIGHT--;
+		dotsinWIDTH--;
+		contx.fillStyle = color;
+        contx.fillRect((j + 1) * CELLWIDTH + 5, (i + 1) * CELLHEIGHT + 5,CELLWIDTH - 10, CELLHEIGHT - 10);
+		check_squares(color,square_counts,dotsinWIDTH,dotsinHEIGHT);
+	}
+	
+	//defining the square objects
+	function square(x,y,w,h){
+		this.w = w;
+		this.h = h;
+		this.bottom = y + h;
+		this.top = y;
+		this.left = x;
+		this.right = x + w;
+		this.TOP = 0;
+		this.BOTTOM = 0;
+		this.LEFT = 0;
+		this.RIGHT = 0;
+	}
+	
+	//function for highlighting not drawn lines when mouse is hovered over them
+	function highlightGrid(squares,dotsinHEIGHT,dotsinWIDTH,contx,canvRect,turn){
+		var x_coord = event.clientX - canvRect.left;
+        var y_coord = event.clientY - canvRect.top;
+		var color = "lightpink";
+		if(turn[0] == 0){color = "lightsteelblue";}
+		for(let i = 0;i < (dotsinHEIGHT - 1);i++){
+			for (let j = 0;j < (dotsinWIDTH - 1);j++){
+				if((y_coord >= (squares[i][j].top - 5)) && (y_coord <= (squares[i][j].top + 5)) && (x_coord > squares[i][j].left) && (x_coord < squares[i][j].right)){
+					if(squares[i][j].TOP == 0){drawLine(squares[i][j].left + 5,squares[i][j].top,squares[i][j].right - 5,squares[i][j].top,color,contx);}
+					return;
+				}
+				if((y_coord >= (squares[i][j].bottom - 5)) && (y_coord <= (squares[i][j].bottom + 5)) && (x_coord > squares[i][j].left) && (x_coord < squares[i][j].right)){
+					if(squares[i][j].BOTTOM == 0){drawLine(squares[i][j].left + 5,squares[i][j].bottom,squares[i][j].right - 5,squares[i][j].bottom,color,contx);}
+					return;
+				}
+				if((x_coord >= (squares[i][j].left - 5)) && (x_coord <= (squares[i][j].left + 5)) && (y_coord < squares[i][j].bottom) && (y_coord > squares[i][j].top)){
+					if(squares[i][j].LEFT == 0){drawLine(squares[i][j].left,squares[i][j].top + 5,squares[i][j].left,squares[i][j].bottom - 5,color,contx);}
+					return;
+				}
+				if((x_coord >= (squares[i][j].right - 5)) && (x_coord <= (squares[i][j].right + 5)) && (y_coord < squares[i][j].bottom) && (y_coord > squares[i][j].top)){
+					if(squares[i][j].RIGHT == 0){drawLine(squares[i][j].right,squares[i][j].bottom - 5,squares[i][j].right,squares[i][j].top + 5,color,contx);}
+					return;
+				}
+			}
+		}
+		for(let i = 0;i < (dotsinHEIGHT - 1);i++){
+			for (let j = 0;j < (dotsinWIDTH - 1);j++){
+					if(squares[i][j].TOP != 1){drawLine(squares[i][j].left + 5,squares[i][j].top,squares[i][j].right - 5,squares[i][j].top,"white",contx);}
+					if(squares[i][j].BOTTOM != 1){drawLine(squares[i][j].left + 5,squares[i][j].bottom,squares[i][j].right - 5,squares[i][j].bottom,"white",contx);}
+					if(squares[i][j].LEFT != 1){drawLine(squares[i][j].left,squares[i][j].top + 5,squares[i][j].left,squares[i][j].bottom - 5,"white",contx);}
+					if(squares[i][j].RIGHT != 1){drawLine(squares[i][j].right,squares[i][j].bottom - 5,squares[i][j].right,squares[i][j].top + 5,"white",contx);}
+			}
+		}
+	}
+	
+	//drawing the lines whenever the mouse is clicked(if possible)
+	function click(squares,dotsinHEIGHT,dotsinWIDTH,contx,canvRect,turn){
+		var x_coord = event.clientX - canvRect.left;
+        var y_coord = event.clientY - canvRect.top;
+		var color = "red";
+		if(turn[0] == 0){color = "blue";}
+		for(let i = 0;i < (dotsinHEIGHT - 1);i++){
+			for (let j = 0;j < (dotsinWIDTH - 1);j++){
+				if((y_coord >= (squares[i][j].top - 5)) && (y_coord <= (squares[i][j].top + 5)) && (x_coord > squares[i][j].left) && (x_coord < squares[i][j].right)){
+					if(squares[i][j].TOP == 0){
+						drawLine(squares[i][j].left + 5,squares[i][j].top,squares[i][j].right - 5,squares[i][j].top,color,contx);
+						squares[i][j].TOP = 1;
+						if((squares[i][j].LEFT == 1) && (squares[i][j].RIGHT == 1) && (squares[i][j].BOTTOM == 1)){square_Fill(i,j,color,contx,dotsinWIDTH,dotsinHEIGHT);}
+						(turn[0] == 0) ? turn[0] = 1 : turn[0] = 0;
+					}
+					return;
+				}
+				if((y_coord >= (squares[i][j].bottom - 5)) && (y_coord <= (squares[i][j].bottom + 5)) && (x_coord > squares[i][j].left) && (x_coord < squares[i][j].right)){
+					if (squares[i][j].BOTTOM == 0){
+						drawLine(squares[i][j].left + 5,squares[i][j].bottom,squares[i][j].right - 5,squares[i][j].bottom,color,contx);
+						squares[i][j].BOTTOM = 1;
+						if((squares[i][j].LEFT == 1) && (squares[i][j].RIGHT == 1) && (squares[i][j].TOP == 1)){square_Fill(i,j,color,contx,dotsinWIDTH,dotsinHEIGHT);}
+						if((i+1) < (dotsinHEIGHT - 1)){
+							squares[i + 1][j].TOP = 1;
+							if((squares[i+1][j].LEFT == 1) && (squares[i+1][j].RIGHT == 1) && (squares[i+1][j].BOTTOM == 1)){square_Fill(i+1,j,color,contx,dotsinWIDTH,dotsinHEIGHT);}
+						}
+						(turn[0] == 0) ? turn[0] = 1 : turn[0] = 0;
+					}
+					return;
+				}
+				if((x_coord >= (squares[i][j].left - 5)) && (x_coord <= (squares[i][j].left + 5)) && (y_coord < squares[i][j].bottom) && (y_coord > squares[i][j].top)){
+					if (squares[i][j].LEFT == 0){
+						drawLine(squares[i][j].left,squares[i][j].top + 5,squares[i][j].left,squares[i][j].bottom - 5,color,contx);
+						squares[i][j].LEFT = 1;
+						if((squares[i][j].RIGHT == 1) && (squares[i][j].TOP == 1) && (squares[i][j].BOTTOM == 1)){square_Fill(i,j,color,contx,dotsinWIDTH,dotsinHEIGHT);}
+						(turn[0] == 0) ? turn[0] = 1 : turn[0] = 0;
+					}
+					return;
+				}
+				if((x_coord >= (squares[i][j].right - 5)) && (x_coord <= (squares[i][j].right + 5)) && (y_coord < squares[i][j].bottom) && (y_coord > squares[i][j].top)){
+					if (squares[i][j].RIGHT == 0){
+						drawLine(squares[i][j].right,squares[i][j].bottom - 5,squares[i][j].right,squares[i][j].top + 5,color,contx);
+						squares[i][j].RIGHT = 1;
+						if((squares[i][j].LEFT == 1) && (squares[i][j].TOP == 1) && (squares[i][j].BOTTOM == 1)){square_Fill(i,j,color,contx,dotsinWIDTH,dotsinHEIGHT);}
+						if((j + 1) < (dotsinWIDTH - 1)){
+							squares[i][j + 1].LEFT = 1;
+							if((squares[i][j+1].RIGHT == 1) && (squares[i][j+1].TOP == 1) && (squares[i][j+1].BOTTOM == 1)){square_Fill(i,j+1,color,contx,dotsinWIDTH,dotsinHEIGHT);}
+						}
+						(turn[0] == 0) ? turn[0] = 1 : turn[0] = 0;
+					}
+					return;
+				}
+			}
+		}
+	}
+	
+</script>
+
+
+</body>
+
+
+
+</html>
