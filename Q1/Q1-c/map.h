@@ -1,0 +1,23 @@
+#ifndef MAP_H
+#define MAP_H
+
+
+class Map {
+ public :
+  Map (int N) ;
+  ~Map();
+  void showMap();
+  void findRoutes ();
+  int fact(int );
+  void bestRoute();
+ private :
+  int n;
+  int** H;
+  int** R;
+  int** roadmap;
+  int* sum;
+};
+
+
+
+#endif
